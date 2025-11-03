@@ -1,6 +1,5 @@
 const { readFileSync } = require('fs');
 
-// Funções movidas para o escopo global
 function formatarMoeda(valor) {
     return new Intl.NumberFormat("pt-BR", {
         style: "currency",
@@ -9,18 +8,18 @@ function formatarMoeda(valor) {
     }).format(valor / 100);
 }
 
-function getPeca(pecas, apre) { // 'pecas' agora é um parâmetro
+function getPeca(pecas, apre) {
     return pecas[apre.id];
 }
 
-function calcularCredito(pecas, apre) { // 'pecas' agora é um parâmetro
+function calcularCredito(pecas, apre) {
     let creditos = 0;
     creditos += Math.max(apre.audiencia - 30, 0);
     if (getPeca(pecas, apre).tipo === "comedia") creditos += Math.floor(apre.audiencia / 5);
     return creditos;
 }
 
-function calcularTotalCreditos(pecas, apresentacoes) { // 'pecas' e 'apresentacoes' são parâmetros
+function calcularTotalCreditos(pecas, apresentacoes) {
     let creditos = 0;
     for (let apre of apresentacoes) {
         creditos += calcularCredito(pecas, apre);
@@ -28,7 +27,7 @@ function calcularTotalCreditos(pecas, apresentacoes) { // 'pecas' e 'apresentaco
     return creditos;
 }
 
-function calcularTotalApresentacao(pecas, apre) { // 'pecas' agora é um parâmetro
+function calcularTotalApresentacao(pecas, apre) {
     let total = 0;
     switch (getPeca(pecas, apre).tipo) {
         case "tragedia":
@@ -50,7 +49,7 @@ function calcularTotalApresentacao(pecas, apre) { // 'pecas' agora é um parâme
     return total;
 }
 
-function calcularTotalFatura(pecas, apresentacoes) { // 'pecas' e 'apresentacoes' são parâmetros
+function calcularTotalFatura(pecas, apresentacoes) {
     let total = 0;
     for (let apre of apresentacoes) {
         total += calcularTotalApresentacao(pecas, apre);
@@ -61,17 +60,35 @@ function calcularTotalFatura(pecas, apresentacoes) { // 'pecas' e 'apresentacoes
 function gerarFaturaStr(fatura, pecas) {
     let faturaStr = `Fatura ${fatura.cliente}\n`;
     for (let apre of fatura.apresentacoes) {
-        // Atualiza chamadas para passar 'pecas'
         faturaStr += ` ${getPeca(pecas, apre).nome}: ${formatarMoeda(calcularTotalApresentacao(pecas, apre))} (${apre.audiencia} assentos)\n`;
     }
-    // Atualiza chamadas para passar 'pecas' e 'fatura.apresentacoes'
     faturaStr += `Valor total: ${formatarMoeda(calcularTotalFatura(pecas, fatura.apresentacoes))}\n`;
     faturaStr += `Créditos acumulados: ${calcularTotalCreditos(pecas, fatura.apresentacoes)} \n`;
     return faturaStr;
 }
 
+// Nova função
+function gerarFaturaHTML(fatura, pecas) {
+    let faturaHTML = `<html>\n`;
+    faturaHTML += `<p> Fatura ${fatura.cliente} </p>\n`;
+    faturaHTML += `<ul>\n`;
+    for (let apre of fatura.apresentacoes) {
+        faturaHTML += ` <li> ${getPeca(pecas, apre).nome}: ${formatarMoeda(calcularTotalApresentacao(pecas, apre))} (${apre.audiencia} assentos) </li>\n`;
+    }
+    faturaHTML += `</ul>\n`;
+    faturaHTML += `<p> Valor total: ${formatarMoeda(calcularTotalFatura(pecas, fatura.apresentacoes))} </p>\n`;
+    faturaHTML += `<p> Créditos acumulados: ${calcularTotalCreditos(pecas, fatura.apresentacoes)} </p>\n`;
+    faturaHTML += `</html>\n`;
+    return faturaHTML;
+}
+
 // --- Main ---
 const faturas = JSON.parse(readFileSync('./faturas.json'));
 const pecas = JSON.parse(readFileSync('./pecas.json'));
+
 const faturaStr = gerarFaturaStr(faturas, pecas);
 console.log(faturaStr);
+
+// Adiciona chamada da nova função
+const faturaHTML = gerarFaturaHTML(faturas, pecas);
+console.log(faturaHTML);
