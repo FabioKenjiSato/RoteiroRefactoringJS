@@ -2,10 +2,14 @@ const { readFileSync } = require('fs');
 
 function gerarFaturaStr(fatura, pecas) {
 
-    // Função extraída
-    function calcularTotalApresentacao(apre, peca) {
+    // Função query
+    function getPeca(apresentacao) {
+        return pecas[apresentacao.id];
+    }
+
+    function calcularTotalApresentacao(apre) { // Parâmetro 'peca' removido
         let total = 0;
-        switch (peca.tipo) {
+        switch (getPeca(apre).tipo) { // Usa a query
             case "tragedia":
                 total = 40000;
                 if (apre.audiencia > 30) {
@@ -20,7 +24,7 @@ function gerarFaturaStr(fatura, pecas) {
                 total += 300 * apre.audiencia;
                 break;
             default:
-                throw new Error(`Peça desconhecida: ${peca.tipo}`);
+                throw new Error(`Peça desconhecida: ${getPeca(apre).tipo}`); // Usa a query
         }
         return total;
     }
@@ -35,17 +39,16 @@ function gerarFaturaStr(fatura, pecas) {
     }).format;
 
     for (let apre of fatura.apresentacoes) {
-        const peca = pecas[apre.id];
+        // const peca = pecas[apre.id]; // Variável local removida
 
-        // Chama a função extraída
-        let totalApresentacao = calcularTotalApresentacao(apre, peca);
+        let totalApresentacao = calcularTotalApresentacao(apre); // Chamada atualizada
 
         // Créditos
         creditos += Math.max(apre.audiencia - 30, 0);
-        if (peca.tipo === "comedia") creditos += Math.floor(apre.audiencia / 5);
+        if (getPeca(apre).tipo === "comedia") creditos += Math.floor(apre.audiencia / 5); // Usa a query
 
         // Fatura
-        faturaStr += ` ${peca.nome}: ${format(totalApresentacao / 100)} (${apre.audiencia} assentos)\n`;
+        faturaStr += ` ${getPeca(apre).nome}: ${format(totalApresentacao / 100)} (${apre.audiencia} assentos)\n`; // Usa a query
         total += totalApresentacao;
     }
 
